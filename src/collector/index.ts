@@ -1,5 +1,5 @@
 import { getLocalIPv4 } from "../utils/network";
-import { Cap, decoders } from "cap";
+import pcap from "pcap";
 
 export interface PacketInfo {
   srcIP: string;
@@ -9,29 +9,26 @@ export interface PacketInfo {
 }
 
 export function startCapture(callback: (packetInfo: PacketInfo) => void) {
-  const c = new Cap();
-  const device = Cap.findDevice(getLocalIPv4());
-  const filter = 'ip and tcp';
-  const bufSize = 10 * 1024 * 1024;
-  const buffer = Buffer.alloc(65535);
+  const localIP = getLocalIPv4();
+  const devices = pcap.findalldevs();
+  const device = devices.length > 0 ? devices[0].name : '';
+  const filter = 'ip proto \\tcp';
+  const pcapSession = pcap.createSession(device, {
+    filter,
+    buffer_size: 10 * 1024 * 1024,
+  });
 
-  const linkType = c.open(device!, filter, bufSize, buffer);
-  c.setMinBytes && c.setMinBytes(0);
+  pcapSession.on('packet', function (rawPacket) {
+    const packet = pcap.decode.packet(rawPacket);
+    const ipPacket = packet.payload.payload;
 
-  c.on('packet', (nbytes: number, trunc: boolean) => {
-    if (linkType === 'ETHERNET') {
-      const ret = decoders.Ethernet(buffer);
+    if (!ipPacket) return;
 
-      if (ret.info.type === decoders.PROTOCOL.ETHERNET.IPV4) {
-        const ip = decoders.IPV4(buffer, ret.offset);
-
-        callback({
-          srcIP: ip.info.srcaddr,
-          destIP: ip.info.dstaddr,
-          protocol: 'TCP',
-          timestamp: new Date()
-        });
-      }
-    }
+    callback({
+      srcIP: ipPacket.saddr?.addr?.join('.') ?? 'unknown',
+      destIP: ipPacket.daddr?.addr?.join('.') ?? 'unknown',
+      protocol: 'TCP',
+      timestamp: new Date()
+    });
   });
 }
