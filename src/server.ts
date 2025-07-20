@@ -1,6 +1,7 @@
 import express from "express";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
+import { startCapture } from "./collector";
 
 dotenv.config();
 
@@ -19,6 +20,10 @@ const io = new Server(server, {
 
 app.get("/", (_req, res) => {
   res.send("PacketViz backend running, lets go");
+});
+
+startCapture(packet => {
+  console.log(`[${packet.protocol}] ${packet.srcIP} → ${packet.destIP}`);
 });
 
 io.on("connection", (socket) => {
