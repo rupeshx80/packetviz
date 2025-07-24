@@ -1,12 +1,14 @@
 import express from "express";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import { startCapture } from "./collector";
+import { startCapture } from "./collector/index.ts";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+
+const PORT = process.env.PORT || 5000;
+
 
 const server = app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

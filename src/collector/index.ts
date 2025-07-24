@@ -1,5 +1,6 @@
-import { getLocalIPv4 } from "../utils/network";
-import pcap from "pcap";
+import { getLocalIPv4 } from "../utils/network.ts";
+import pcap from "pcap2";
+
 
 export interface PacketInfo {
   srcIP: string;
